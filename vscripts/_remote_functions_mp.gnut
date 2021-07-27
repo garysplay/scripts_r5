@@ -43,7 +43,11 @@ void function RemoteFunctions_Init_Begin()
 	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_EventNotification" )
 
 	Remote_RegisterClientFunction( "ServerCallback_UpdateHudWeaponData", "entity" )
-
+	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_BLEEDOUT_ShowWoundedMarker" )
+	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_BLEEDOUT_HideWoundedMarker" )
+	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_BLEEDOUT_StartFirstAidProgressBar" )
+	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_BLEEDOUT_StopFirstAidProgressBar" )
+	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_ModelViewerDisableConflicts" )
 	Remote_RegisterUntypedFunction_deprecated( "SCB_AddGrenadeIndicatorForEntity" )
 
 	Remote_RegisterUntypedFunction_deprecated( "ScriptCallback_UnlockAchievement" )
@@ -167,7 +171,7 @@ void function RemoteFunctions_Init_Begin()
 //
 //
 #endif //
-
+		case CUSTOM_TDM:
 		case SURVIVAL:
 			RegisterNetworkedVariable( "isPlayerShadowForm", SNDC_PLAYER_GLOBAL, SNVT_BOOL, false )
 			RegisterNetworkedVariable( "hasDeathFieldImmunity", SNDC_PLAYER_EXCLUSIVE, SNVT_BOOL, false )
@@ -424,7 +428,7 @@ void function RemoteFunctions_Init_Begin()
 	Remote_RegisterUntypedFunction_deprecated( "ServerCallback_UpdateOverheadIconForNPC" )
 
 	//
-	Remote_RegisterClientFunction( "BroadcastCommsActionToTeam", "entity", "int", 0, eCommsAction._count, "entity", "vector", -32000.0, 32000.0, 32, "int", 0, (1 << eCommsFlags._flagCount) )
+	Remote_RegisterClientFunction( "HandleBroadcastCommsAction", "entity", "int", 0, eCommsAction._count, "entity", "vector", -32000.0, 32000.0, 32, "int", 0, (1 << eCommsFlags._flagCount) )
 
 	//
 	Remote_RegisterClientFunction( "PerformQuip", "entity", "int", 0, INT_MAX )

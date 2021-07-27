@@ -698,7 +698,7 @@ void function OnClientConnected( entity player )
 void function OnPlayerRespawned( entity player )
 {
 	if ( GetCurrentPlaylistVarInt( "survival_shields", 1 ) )
-		player.SetShieldHealthMax( SURVIVAL_GetArmorShieldCapacity( 0  ) )
+		player.SetShieldHealthMax( SURVIVAL_GetArmorShieldCapacity( 0 ) )
 }
 #endif // SERVER
 
@@ -1521,9 +1521,6 @@ void function OnPropSurvivalCreate( entity prop )
 	int index = prop.GetSurvivalInt()
 
 	//printt("Surv idx ", index)
-	#if SERVER
-	printt("SERVER OnPropSurvivalCreate")
-	#endif
 
 	if ( index < 0 )
 		return
@@ -2139,10 +2136,8 @@ array<string> function SURVIVAL_GetAllPlayerOrdnance( entity player )
 bool function SURVIVAL_CanPlayerPickup( entity player, entity pickup )
 {
 	#if SERVER
-	printt("??? SURVIVAL_CanPlayerPickup FIX pickup.e.spawnTime ???")
-	//printt("SURVIVAL_CanPlayerPickup", (pickup.e.spawnTime + 0.5 > Time()), SURVIVAL_PlayerAllowedToPickup( player ) )
-	//if ( pickup.e.spawnTime + 0.5 > Time() )
-	//	return false
+	if ( pickup.e.spawnTime + 0.5 > Time() )
+		return false
 	#endif
 
 	return SURVIVAL_PlayerAllowedToPickup( player )
@@ -2466,7 +2461,7 @@ LootActionStruct function SURVIVAL_BuildStringForAction( entity player, int cont
 				if ( kitCat == eHealthPickupCategory.ULTIMATE )
 				{
 
-					entity ultAbility = player.GetOffhandWeapon( OFFHAND_INVENTORY )
+					entity ultAbility = player.GetOffhandWeapon( OFFHAND_ULTIMATE )
 					int ammo = ultAbility.GetWeaponPrimaryClipCount()
 					int maxAmmo = ultAbility.GetWeaponPrimaryClipCountMax()
 

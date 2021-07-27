@@ -94,7 +94,7 @@ void function SV_CL_Init()
 	#endif
 
 	ShDevWeapons_Init()
-
+	BleedoutShared_Init()
 	ShPakRequests_LevelInit()
 	ShXP_Init()
 	ShPersistentData_LevelInit_Begin()
@@ -176,6 +176,7 @@ void function SV_CL_Init()
 
 	ShGameModeShadowSquad_Init()
 
+	SV_CL_Onboarding_Init()
 
 	ShTutorial_Init()
 	Sh_PassiveVoices_Init()
@@ -235,6 +236,7 @@ void function Server_Init()
 	Music_Init()
 	TitanTether_Init()
 	AiSoldiers_Init()
+	Bleedout_Init()
 	AiSpawn_Init()
 #if NPC_TITAN_PILOT_PROTOTYPE
 	AiPilots_Init()
@@ -293,6 +295,8 @@ void function Server_Init()
 	Bombardment_Init()
 	ThreatDetection_Init()
 	Staging_Area_Init()
+
+	SurvivalCommentary_Init()
 
 	GameMode_RunServerInits()
 
@@ -374,6 +378,7 @@ void function Client_Init()
 	#endif
 
 	CLHud_Init()
+	ClGamemodeSurvival_Init()
 	GameMode_RunClientInits()
 	ClRespawnselect_MP_Init()
 	ClObituary_Init()

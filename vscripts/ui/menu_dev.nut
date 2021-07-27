@@ -268,14 +268,16 @@ void function ChangeToThisMenu_WithOpParm( void functionref( var ) menuFuncWithO
 
 void function SetupDefaultDevCommandsMP()
 {
+	SetupDevMenu( "Abilities", SetDevMenu_Abilities )
+	SetupDevMenu( "Equip Weapon", SetDevMenu_Weapons )
+	SetupDevMenu( "MDLSpawner", SetDevMenu_ModelSpawner )
+
 	if ( IsSurvivalMenuEnabled() )
 	{
-		SetupDevMenu( "Abilities", SetDevMenu_Abilities )
-		SetupDevMenu( "Equip Weapon", SetDevMenu_OverrideSpawnSurvivalCharacter )
-		SetupDevMenu( "MDLSpawner", SetDevMenu_ModelSpawner )
-		SetupDevMenu( "Survival", SetDevMenu_Survival )
 		SetupDevMenu( "Change Character", SetDevMenu_SurvivalCharacter )
 		SetupDevMenu( "Alter Loadout", SetDevMenu_AlterLoadout )
+		SetupDevMenu( "Override Spawn Character", SetDevMenu_OverrideSpawnSurvivalCharacter )
+		SetupDevMenu( "Survival", SetDevMenu_Survival )
 		SetupDevMenu( "Survival Weapons", SetDevMenu_SurvivalLoot, "main_weapon" )
 		SetupDevMenu( "Survival Attachments", SetDevMenu_SurvivalLoot, "attachment" )
 		SetupDevMenu( "Survival Helmets", SetDevMenu_SurvivalLoot, "helmet" )
@@ -311,7 +313,7 @@ void function SetupDefaultDevCommandsMP()
 
 	SetupDevCommand( "Toggle Model Viewer", "script thread ToggleModelViewer()" )
 	SetupDevCommand( "Start Skydive", "script thread SkydiveTest()" )
-	//SetupDevCommand( "Spawn Deathbox", "script thread CreateDeathBox()" )
+	SetupDevCommand( "Spawn Deathbox", "script thread SURVIVAL_CreateDeathBox(gp()[0], false)" )
 	//SetupDevCommand( "Toggle Weapon Preview", "ToggleWeaponSkinPreview" )
 	//SetupDevMenu( "Threat Tracker", SetDevMenu_ThreatTracker )
 	//SetupDevMenu( "High-Vis NPC Test", SetDevMenu_HighVisNPCTest )
@@ -335,7 +337,7 @@ void function SetupDefaultDevCommandsMP()
 	//SetupDevCommand( "Kill All Titans", "script killtitans()" )
 	//SetupDevCommand( "Kill All Minions", "script killminions()" )
 
-	SetupDevCommand( "Export leveled_weapons.def / r2_weapons.fgd", "script thread LeveledWeaponDump()" )
+	// SetupDevCommand( "Export leveled_weapons.def / r2_weapons.fgd", "script thread LeveledWeaponDump()" )
 
 	SetupDevCommand( "Summon Players to player 0", "script summonplayers()" )
 	//SetupDevCommand( "Display Titanfall spots", "script thread ShowAllTitanFallSpots()" )
@@ -343,15 +345,15 @@ void function SetupDefaultDevCommandsMP()
 	//SetupDevCommand( "Test Dropship Intro Spawns with Bots", "script thread DebugTestDropshipStartSpawnsForAll()" )
 	//SetupDevCommand( "Preview Dropship Spawn at this location", "script SetCustomPlayerDropshipSpawn()" )
 	//SetupDevCommand( "Test Dropship Spawn at this location", "script thread DebugTestCustomDropshipSpawn()" )
-	SetupDevCommand( "Max Activity (Pilots)", "script SetMaxActivityMode(1)" )
+	//SetupDevCommand( "Max Activity (Pilots)", "script SetMaxActivityMode(1)" )
 	//SetupDevCommand( "Max Activity (Titans)", "script SetMaxActivityMode(2)" )
 	//SetupDevCommand( "Max Activity (Conger Mode)", "script SetMaxActivityMode(4)" )
-	SetupDevCommand( "Max Activity (Disabled)", "script SetMaxActivityMode(0)" )
+	//SetupDevCommand( "Max Activity (Disabled)", "script SetMaxActivityMode(0)" )
 
 	SetupDevCommand( "Toggle Skybox View", "script thread ToggleSkyboxView()" )
 	SetupDevCommand( "Toggle HUD", "script thread ToggleHud()" )
 	//SetupDevCommand( "Toggle Offhand Low Recharge", "ToggleOffhandLowRecharge" )
-	SetupDevCommand( "Map Metrics Toggle", "script_client GetLocalClientPlayer().ClientCommand( \"toggle map_metrics 0 1 2 3\" )" )
+	//SetupDevCommand( "Map Metrics Toggle", "script_client GetLocalClientPlayer().ClientCommand( \"toggle map_metrics 0 1 2 3\" )" )
 	SetupDevCommand( "Toggle Pain Death sound debug", "script TogglePainDeathDebug()" )
 	SetupDevCommand( "Jump Randomly Forever", "script_client thread JumpRandomlyForever()" )
 
@@ -395,6 +397,11 @@ void function SetDevMenu_ModelSpawner( var _ )
 void function SetDevMenu_Abilities( var _ )
 {
 	thread ChangeToThisMenu( SetupAbilities )
+}
+
+void function SetDevMenu_Weapons( var _ )
+{
+	thread ChangeToThisMenu( SetupWeapons )
 }
 
 void function SetDevMenu_SurvivalCharacter( var _ )
@@ -743,7 +750,7 @@ void function SetDevMenu_Prototypes( var _ )
 
 void function SetupPrototypesDevMenu()
 {
-		SetupDevCommand( "Change to Shadow Squad", "script Dev_ShadowFormEnable( GP() )" )
+	// SetupDevCommand( "Change to Shadow Squad", "script Dev_ShadowFormEnable( GP() )" )
 }
 
 
@@ -755,6 +762,10 @@ void function RunCodeDevCommandByAlias( string alias )
 
 void function SetupDevCommand( string label, string command )
 {
+	command = StringReplace( command, "\"", "'" )
+	if ( command.slice( 0, 5 ) == "give " )
+		command = "give_server " + command.slice( 5 )
+
 	DevCommand cmd
 	cmd.label = label
 	cmd.command = command

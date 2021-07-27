@@ -19,13 +19,13 @@ struct {
 
 void function _CustomTDM_Init()
 {
+
     AddCallback_OnPlayerKilled(void function(entity victim, entity attacker, var damageInfo) {thread SV_OnPlayerDied(victim, attacker, damageInfo)})
     AddCallback_OnClientConnected( void function(entity player) { thread SV_OnPlayerConnected(player) } )
     AddClientCommandCallback("next_round", ClientCommand_NextRound)
         
     thread RunTDM()
 }
-
 
 void function DEBUG_TestSpawnLocs(entity player)
 {
@@ -73,9 +73,8 @@ void function SV_OnPropDynamicSpawned(entity prop)
 }
 void function RunTDM()
 {
-    WaitPrematch()
+    WaitForGameState(eGameState.Playing)
     AddSpawnCallback("prop_dynamic", SV_OnPropDynamicSpawned)
-    wait 5
     for(; ; )
     {
         VotingPhase();
@@ -117,16 +116,13 @@ void function VotingPhase()
     foreach(player in GetPlayerArray()) 
     {
         if(!IsValid(player)) continue;
-        if(!IsAlive(player))
-        {
-            DoRespawnPlayer(player, null)
-        }
+        DecideRespawnPlayer(player)
         MakeInvincible(player)
 		HolsterAndDisableWeapons( player )
         player.ForceStand()
-        player.SetHealth( 100 )
         Remote_CallFunction_NonReplay(player, "ServerCallback_TDM_DoAnnouncement", 2, eTDMAnnounce.VOTING_PHASE)
         TpPlayerToSpawnPoint(player)
+        player.UnfreezeControlsOnServer();      
     }
     wait VOTING_TIME
 
@@ -143,7 +139,7 @@ void function VotingPhase()
 void function StartRound() 
 {
     SetGameState(eGameState.Playing)
-
+    
     foreach(player in GetPlayerArray())
     {
         Remote_CallFunction_NonReplay(player, "ServerCallback_TDM_DoLocationIntroCutscene")
@@ -152,11 +148,7 @@ void function StartRound()
     wait 1
     foreach(player in GetPlayerArray())
     {
-        if(!IsAlive(player))
-        {
-            DoRespawnPlayer(player, null)
-            player.SetHealth( 100 )
-        }
+        DecideRespawnPlayer(player)
         TpPlayerToSpawnPoint(player)
         
     }
@@ -175,8 +167,9 @@ void function StartRound()
         Remote_CallFunction_NonReplay(player, "ServerCallback_TDM_DoAnnouncement", 5, eTDMAnnounce.ROUND_START)
         ClearInvincible(player)
         DeployAndEnableWeapons(player)
-        player.UnforceStand()
-        
+        player.UnforceStand()  
+        player.UnfreezeControlsOnServer();
+        PlayerRestoreHP(player, 100, 100)
     }
     float endTime = Time() + ROUND_TIME
     while( Time() <= endTime )
@@ -229,34 +222,24 @@ void function FillPlayerToNeedyTeam(entity player)
 void function SV_OnPlayerConnected(entity player)
 {
     wait 1.5
-    // set index of team
-    int index = GetPlayerArrayOfTeam(player.GetTeam()).len() - 1
-    player.SetTeamMemberIndex(index)
-
-    player.SetPlayerSettingsWithMods($"settings/player/mp/pilot_survival_firesupport.rpak", [])
-    player.GiveWeapon("mp_weapon_melee_survival", OFFHAND_MELEE )
     //Give passive regen (pilot blood)
     GivePassive(player, ePassives.PAS_PILOT_BLOOD)
 
-    DoRespawnPlayer(player, null)
-    SetPlayerSettings(player, TDM_PLAYER_SETTINGS)
-    PlayerRestoreHP(player, 100, 65)
+    DecideRespawnPlayer(player)
+    PlayerRestoreHP(player, 100, 100)
     TpPlayerToSpawnPoint(player)
-
-    StatusEffect_AddEndless( player, eStatusEffect.sonar_detected, 1.0 )
-
-    player.HighlightEnableForTeam( 1 )
-
-    Highlight_SetSonarHighlightWithParam0( player, "enemy_sonar", <1,0,0> )
+    //SetPlayerSettings(player, TDM_PLAYER_SETTINGS)
 
 
     switch(GetGameState())
     {
+
+    case eGameState.WaitingForPlayers:
+        break
     case eGameState.Playing:
         Remote_CallFunction_NonReplay(player, "ServerCallback_TDM_DoAnnouncement", 5, eTDMAnnounce.ROUND_START)
 
         break
-
     default: 
         break
     }
@@ -272,28 +255,20 @@ void function SV_OnPlayerDied(entity victim, entity attacker, var damageInfo)
 
         if(IsValid(victim) && !IsAlive(victim))
         {
-            array<entity> weapons = GetPrimaryWeapons(victim)
-            array<WeaponKit> weaponNames = []
-
-            foreach(weapon in weapons)
-            {
-                weaponNames.push(NewWeaponKit(weapon.GetWeaponClassName(), weapon.GetMods(), WEAPON_INVENTORY_SLOT_ANY))
-            }
-
-            entity offhand = victim.GetOffhandWeapon(OFFHAND_SPECIAL)
-
-            if(offhand)
-                weaponNames.push(NewWeaponKit(offhand.GetWeaponClassName(), offhand.GetMods(), OFFHAND_SPECIAL))
             
+            string weapon0 = SURVIVAL_GetWeaponBySlot(victim, 0)
+            string weapon1 = SURVIVAL_GetWeaponBySlot(victim, 1)
+
+
             wait 1.5
             
-            DoRespawnPlayer(victim, null)
+            DecideRespawnPlayer( victim )
+            PlayerRestoreWeapons(victim, weapon0, weapon1)
             SetPlayerSettings(victim, TDM_PLAYER_SETTINGS)
             PlayerRestoreHP(victim, 100, 100)
             
 
             TpPlayerToSpawnPoint(victim)
-            PlayerRestoreWeapons(victim, weaponNames)
             thread GrantSpawnImmunity(victim, 3)
         }
 
@@ -339,23 +314,15 @@ void function PlayerRestoreHP(entity player, float health, float shields)
     player.SetShieldHealth( shields )
 
 }
-void function PlayerRestoreWeapons(entity player, array<WeaponKit> weaponKits = [])
+void function PlayerRestoreWeapons(entity player, string weapon0, string weapon1)
 {
-    foreach(weaponKit in weaponKits)
+    if(IsValid(weapon0) && weapon0 != "")
     {
-        switch(weaponKit.slot)
-        {
-            case OFFHAND_SPECIAL:
-            case OFFHAND_INVENTORY:
-            
-            player.GiveOffhandWeapon(weaponKit.weapon, weaponKit.slot, weaponKit.mods)
-            break;
-
-            case WEAPON_INVENTORY_SLOT_ANY:
-            default:
-            player.GiveWeapon(weaponKit.weapon, weaponKit.slot, weaponKit.mods)
-        }
-        
+        player.GiveWeapon(weapon0, WEAPON_INVENTORY_SLOT_PRIMARY_0);
+    }
+    if(IsValid(weapon1) && weapon1 != "")
+    {
+        player.GiveWeapon_NoDeploy(weapon1, WEAPON_INVENTORY_SLOT_PRIMARY_1);
     }
 }
 

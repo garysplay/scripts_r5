@@ -134,7 +134,6 @@ void function InitWeaponScripts()
 	SonarGrenade_Init()
 	MpWeaponSniper_Init()
 	MpWeaponLSTAR_Init()
-	//MpWeaponGreandeElectricSmoke_Init()
 	MpWeaponZipline_Init()
 	MpWeaponAlternatorSMG_Init()
 	MpWeaponThermiteGrenade_Init()
@@ -144,6 +143,7 @@ void function InitWeaponScripts()
 	MpWeaponBloodhoundAxePrimary_Init()
 	MeleeLifelineBaton_Init()
 	MpWeaponLifelineBatonPrimary_Init()
+	MpWeaponDeployableCover_Init()
 
 	#if R5DEV
 		MeleeShadowsquadHands_Init()
@@ -5312,6 +5312,12 @@ bool function IsFallLTM()
 	return GetCurrentPlaylistVarInt( "mode_fall_ltm", 0 ) == 1
 }
 
+bool function IsLobbyFallLTM()
+{
+	return GetCurrentPlaylistVarInt( "menu_fall_ltm", 0 ) == 1
+}
+
+
 table<int, array<entity> > function ArrangePlayersByTeam( array<entity> players )
 {
 	table<int, array<entity> > out = {}
@@ -5324,4 +5330,11 @@ table<int, array<entity> > function ArrangePlayersByTeam( array<entity> players 
 			out[team] <- [ player ]
 	}
 	return out
+}
+
+void function WaitForGameState(int state) {
+	while ( GetGameState() != state )
+	{
+		WaitFrame()
+	}
 }
